@@ -85,6 +85,13 @@ BreakdownBy.prototype.getOrderedKeys = function(fixedOrder) {
 		return this.keys.slice(0).sort();
 	}
 }
+BreakdownBy.prototype.getPopSizes = function() {
+	var rv = {};
+	for (var i = 0; i < this.pops.length; i++) {
+		rv[this.keys[i]] = this.pops[i].getSize();
+	}
+	return rv;
+}
 
 /**
  * --------------------------------------------------------------------------------------------------------------
