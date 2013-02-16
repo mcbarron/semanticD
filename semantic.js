@@ -116,7 +116,7 @@ Individual.prototype.getAttributes = function() {
 }
 /**
  * @description Provides a way to lookup an attribute by only passing a partial string (not the full URI).
- * For example, allows us to query for ":hasStatus" instead of "EBI_FO_Metric:hasStatus"
+ * For example, allows us to query for ":hasStatus" instead of "YOUR_SOURCE_NAMESPACE:hasStatus"
  */
 Individual.prototype.attribute = function(attributeID, newAttributeValue) {
 	if (typeof newAttributeValue !== "undefined") {
