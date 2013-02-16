@@ -116,7 +116,7 @@ Individual.prototype.getAttributes = function() {
 }
 /**
  * @description Provides a way to lookup an attribute by only passing a partial string (not the full URI).
- * For example, allows us to query for ":hasStatus" instead of "YOUR_SOURCE_NAMESPACE:hasStatus"
+ * For example, allows us to query for ":hasStatus" instead of "EBI_FO_Metric:hasStatus"
  */
 Individual.prototype.attribute = function(attributeID, newAttributeValue) {
 	if (typeof newAttributeValue !== "undefined") {
@@ -198,7 +198,7 @@ Population.prototype.addIndividual = Population.prototype.add = function(ind, ob
 	return ind;
 };
 /**
- * @description Merges the population in (we don't simply $.extend since we also want all the tracking metrics to be updated).
+ * Merges the population in (we can simply extend since it's an existing population)
  */
 Population.prototype.mergeIn = function(pop) {
 	for (var uri in pop.individuals) {
@@ -240,7 +240,7 @@ Population.prototype.hasIndividuals = function() {
 /**
  * @return Returns an object that can be interated using the "for (var ind in population.getIndividuals())" where "ind" will be the URI of the individual.  See "get()" to retrieve the individual itself.
  */
-Population.prototype.getIndividuals = function(filterProperty, filterValue) {
+Population.prototype.getIndividuals = function() {
 	return this.individuals;
 };
 /**
