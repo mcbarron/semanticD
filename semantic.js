@@ -1,6 +1,6 @@
 /*** LICENSE *************************************************************************************
  * @title Semantic jQuery and HighCharts Library                                                 *
- * @author Michael Barron, BugSeed Inc                                                           *
+ * @author Michael Barron, Bugseed                                                               *
  * @license Creative Commons Attribution-ShareAlike 3.0 Unported License; to view a copy of this *
  *  ___ ___  license, visit http://creativecommons.org/licenses/by-sa/3.0/                       *
  * | _ ) __| You may not remove or alter this licence or attribution information.  Enhancements  *
