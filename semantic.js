@@ -1,9 +1,9 @@
 /*** LICENSE *************************************************************************************
- * @title Semantic jQuery and HighCharts Library                                                 *
+ * @title Semantic jQuery and HighCharts Library 0.2                                             *
  * @author Michael Barron, Bugseed                                                               *
  * @license Creative Commons Attribution-ShareAlike 3.0 Unported License; to view a copy of this *
- *  ___ ___  license, visit http://creativecommons.org/licenses/by-sa/3.0/                       *
- * | _ ) __| You may not remove or alter this licence or attribution information.  Enhancements  *
+ *  ___ ____ license, visit http://creativecommons.org/licenses/by-sa/3.0/                       *
+ * | _ ) __/ You may not remove or alter this licence or attribution information.  Enhancements  *
  * | _ \__ \ or modifications made to this code must be shared under the same license.           *
  * |___/___/                                                                                     *
  *                                                                                               *
@@ -12,23 +12,11 @@
 /**
  * - BASIC DEFINITIONS ------------------------------------------------------------------------------------------
  */
-// Make sure console exists and is defined (only necessary because IE sucks)
-if (!window.console) {
-	console = {};
-}
-console.log = console.log || function(){};
-console.warn = console.warn || function(){};
-console.error = console.error || function(){};
-console.info = console.info || function(){};
 if (typeof String.prototype.startsWith === "undefined") {
-	String.prototype.startsWith = function(prefix) {
-		return (this.length > 0 && this.charAt(0) === prefix);
-	};
+	String.prototype.startsWith = function(prefix) { return (this.length > 0 && this.charAt(0) === prefix); };
 }
 if (typeof String.prototype.endsWith === "undefined") {
-	String.prototype.endsWith = function(suffix) {
-		return this.indexOf(suffix, this.length - suffix.length) !== -1;
-	};
+	String.prototype.endsWith = function(suffix) { return this.indexOf(suffix, this.length - suffix.length) !== -1; };
 }
 
 /**
@@ -96,16 +84,20 @@ BreakdownBy.prototype.getPopSizes = function() {
 /**
  * --------------------------------------------------------------------------------------------------------------
  */
-function Individual(uri, existing) {
+function Individual(uri, obj) {
 	this.uri = uri;
 	this.attributes = {};
-	if (existing) {
-		if (existing.attributes) {
-			this.attributes = existing.attributes;
+	if (typeof obj === "undefined")  {
+		// assume uri is also original object
+		obj = uri;
+	}
+	if (obj) {
+		if (obj.attributes) {
+			this.attributes = obj.attributes;
 		} else {
-			for (var a in existing) {
+			for (var a in obj) {
 				if (typeof a === "string") {
-					this.attributes[a] = existing[a];
+					this.attributes[a] = obj[a];
 				}
 			}
 		}
@@ -122,7 +114,7 @@ Individual.prototype.attribute = function(attributeID, newAttributeValue) {
 	if (typeof newAttributeValue !== "undefined") {
 		// we are setting the attribute to a NEW value - be careful!!!
 		this.attributes[attributeID] = newAttributeValue;
-	} else if (attributeID && !this.attributes[attributeID]) {
+	} else if (attributeID && !this.attributes[attributeID] && attributeID.startsWith(":")) {
 		// if there is not an exact match then search for an attribute that ends with the passed ID
 		for (var a in this.attributes) {
 			if (a.endsWith(attributeID)) {
@@ -147,8 +139,8 @@ function Population(existing) {
 	this.first = undefined;
 	this.last = undefined;
 	if (typeof existing === "object") {
-		if (typeof existing.getIndividuals !== "function") {
-			// Verify the individuals are all Individual objects
+		if (typeof existing.getIndividuals === "function") {
+			// This is an existing Population - add each individual to our collective
 			for (var uri in existing.individuals) {
 				this.addIndividual(existing.individuals[uri]);
 			}
@@ -163,11 +155,13 @@ function Population(existing) {
  * arguments, where the first is the "uri" and the second is either an individual or an object with attributes.
  */
 Population.prototype.addIndividual = Population.prototype.add = function(ind, objIfFirstIsURI) {
-	if (!(ind instanceof Individual)) {
-		ind = new Individual(ind, objIfFirstIsURI);
+	var uri, attributeID, aValue;
+	if (ind instanceof Individual) {
+		uri = ind.getURI();
+	} else {
+		ind = new Individual(this.size, objIfFirstIsURI);
+		uri = "_id_"+this.size;
 	}
-	var attributeID, aValue;
-	var uri = ind.getURI();
 	if (!this.individuals[uri]) {
 		// This is a new individual for this population
 		this.size++;
@@ -185,14 +179,16 @@ Population.prototype.addIndividual = Population.prototype.add = function(ind, ob
 				this.attributes[attributeID] = {};
 			}
 			if (this.attributes[attributeID][aValue] === undefined) {
-				this.attributes[attributeID][aValue] = true;
+				this.attributes[attributeID][aValue] = 1;
+			} else {
+				this.attributes[attributeID][aValue]++;
 			}
 		}
 	}
 	// Now record the missing attributes of this individual
 	for (attributeID in this.attributes) {
 		if (ind.attribute(attributeID) === undefined) {
-			this.attributes[attributeID][""] = true;
+			this.attributes[attributeID][""] = 0;
 		}
 	}
 	return ind;
@@ -201,9 +197,18 @@ Population.prototype.addIndividual = Population.prototype.add = function(ind, ob
  * Merges the population in (we can simply extend since it's an existing population)
  */
 Population.prototype.mergeIn = function(pop) {
-	for (var uri in pop.individuals) {
-		if (typeof uri === "string") {
-			this.addIndividual(pop.get(uri));
+	if (pop.individuals) {
+		for (var uri in pop.individuals) {
+			if (typeof uri === "string") {
+				this.addIndividual(uri, pop.get(uri));
+			}
+		}
+	} else {
+		// Unknown population structure, assume regular objects and seek out attributes.
+		if (Array.isArray(pop)) {
+			for (var i in pop) {
+				this.addIndividual(null, pop[i]);
+			}
 		}
 	}
 }
@@ -308,7 +313,7 @@ Population.prototype.filter = function(filtersOrFilterProp, optionalFilterValue)
 	for (var uri in this.getIndividuals()) {
 		var individual = this.get(uri);
 		if (filters.isIndividualVisible(individual)) {
-			rv.addIndividual(individual);
+			rv.addIndividual(uri, individual);
 		}
 	}
 	return rv;
