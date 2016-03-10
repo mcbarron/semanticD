@@ -151,16 +151,17 @@ function Population(existing) {
 }
 /**
  * @description Adds an individual to this population
- * You can either pass a single argument (of type "Individual") or two
- * arguments, where the first is the "uri" and the second is either an individual or an object with attributes.
+ * You can either pass a single argument of type "Individual" or a raw object itself.
+ * Raw objects are added as if they are "new" (so duplicates may be created if you are not careful)
  */
-Population.prototype.addIndividual = Population.prototype.add = function(ind, objIfFirstIsURI) {
+Population.prototype.addIndividual = function(ind) {
 	var uri, attributeID, aValue;
 	if (ind instanceof Individual) {
 		uri = ind.getURI();
 	} else {
-		ind = new Individual(this.size, objIfFirstIsURI);
+		// Add as a new entry
 		uri = "_id_"+this.size;
+		ind = new Individual(uri, ind);
 	}
 	if (!this.individuals[uri]) {
 		// This is a new individual for this population
@@ -200,14 +201,14 @@ Population.prototype.mergeIn = function(pop) {
 	if (pop.individuals) {
 		for (var uri in pop.individuals) {
 			if (typeof uri === "string") {
-				this.addIndividual(uri, pop.get(uri));
+				this.addIndividual(pop.get(uri));
 			}
 		}
 	} else {
 		// Unknown population structure, assume regular objects and seek out attributes.
 		if (Array.isArray(pop)) {
 			for (var i in pop) {
-				this.addIndividual(null, pop[i]);
+				this.addIndividual(pop[i]);
 			}
 		}
 	}
@@ -313,7 +314,7 @@ Population.prototype.filter = function(filtersOrFilterProp, optionalFilterValue)
 	for (var uri in this.getIndividuals()) {
 		var individual = this.get(uri);
 		if (filters.isIndividualVisible(individual)) {
-			rv.addIndividual(uri, individual);
+			rv.addIndividual(individual);
 		}
 	}
 	return rv;

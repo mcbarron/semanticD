@@ -12,3 +12,27 @@ function getTestData1()  {
 		,{"sessionId":"rndGN3H3F2_6tIiyDwUCgxQ","operation":"Start|initial","referer":"null","userAgent":"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)","deviceUserAgent":"Mozilla/4.0 (compatible; MSIE 6.0;","parameters":{"method":"GET"}}
 	];
 };
+
+var test1Output;
+function runTest1() {
+	var rv;
+	var textValue = $("#textarea_test1").val();
+	try {
+		rv = new Population(JSON.parse(textValue));
+	} catch (e) {
+		// Huh - try parsing each row individually
+		rv = new Population();
+		var valArray = textValue.split("\n");
+		for (var i = 0; i<valArray.length; i++) {
+			try {
+				val = JSON.parse(valArray[i]);
+				rv.addIndividual(val);
+			} catch (e2) {}
+		}
+	}
+	console.debug(rv);
+};
+
+jQuery(function() {
+	$("#textarea_test1").val(JSON.stringify(getTestData1()));
+});
