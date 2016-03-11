@@ -1,15 +1,13 @@
 /*** LICENSE *************************************************************************************
- * @title Semantic jQuery Plugin (popluation analysis and decomposition)
- * @author Michael Barron / Bugseed
- * @license Creative Commons Attribution-ShareAlike 3.0 Unported License; to view a copy of this
- *  ___ ____ license, visit http://creativecommons.org/licenses/by-sa/3.0/
- * | _ ) __/ You may not remove or alter this licence or attribution information.  Enhancements
- * | _ \__ \ or modifications made to this code must be shared under the same license.
- * |___/___/
- *
+ * @title Semantic jQuery and HighCharts Library 0.2                                             *
+ * @author Michael Barron, Bugseed                                                               *
+ * @license Creative Commons Attribution-ShareAlike 3.0 Unported License; to view a copy of this *
+ *  ___ ____ license, visit http://creativecommons.org/licenses/by-sa/3.0/                       *
+ * | _ ) __/ You may not remove or alter this licence or attribution information.  Enhancements  *
+ * | _ \__ \ or modifications made to this code must be shared under the same license.           *
+ * |___/___/                                                                                     *
+ *                                                                                               *
  *************************************************************************************************/
-
-var $ = require("jquery");
  
 /**
  * - BASIC DEFINITIONS ------------------------------------------------------------------------------------------
