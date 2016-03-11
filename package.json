@@ -2,7 +2,7 @@
   "name": "semanticj",
   "version": "0.1.0",
   "description": "Semantic popluation analysis and decomposition",
-  "main": "semantic.js",
+  "main": "semanticj",
   "directories": {
     "test": "tests"
   },
