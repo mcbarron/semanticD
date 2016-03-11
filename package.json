@@ -11,12 +11,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mcbarron/semanticJ.git"
+    "url": "git+https://github.com/mcbarron/semanticj.git"
   },
   "author": "Mike Barron",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/mcbarron/semanticJ/issues"
+    "url": "https://github.com/mcbarron/semanticj/issues"
   },
-  "homepage": "https://github.com/mcbarron/semanticJ#readme"
+  "homepage": "https://github.com/mcbarron/semanticj#readme"
 }
