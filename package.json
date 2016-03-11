@@ -1,0 +1,22 @@
+{
+  "name": "semanticj",
+  "version": "0.1.0",
+  "description": "Semantic popluation analysis and decomposition",
+  "main": "semantic.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcbarron/semanticJ.git"
+  },
+  "author": "Mike Barron",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mcbarron/semanticJ/issues"
+  },
+  "homepage": "https://github.com/mcbarron/semanticJ#readme"
+}
