@@ -1,35 +1,72 @@
-/*** LICENSE *************************************************************************************
- * @title Semantic popluation analysis and decomposition
- * @author Michael Barron / Bugseed
- * @license Creative Commons Attribution-ShareAlike 3.0 Unported License; to view a copy of this
- *  ___ ____ license, visit http://creativecommons.org/licenses/by-sa/3.0/
- * | _ ) __/ You may not remove or alter this licence or attribution information.  Enhancements
- * | _ \__ \ or modifications made to this code must be shared under the same license.
- * |___/___/
- *
- *************************************************************************************************/
+function BreakdownBy(breakdownAttribute) {
+	this.breakdownAttribute = breakdownAttribute;
+	this.size = 0;
+	this.popLookup = {};
+	this.pops = [];
+	this.keys = [];
+}
+BreakdownBy.prototype.getSize = function() {	
+	return this.size;
+}
+BreakdownBy.prototype.getBreakdownAttribute = function() {	
+	return this.breakdownAttribute;
+}
+BreakdownBy.prototype.get = function(key, addIfNotPresent) {
+	if (addIfNotPresent && !this.popLookup.hasOwnProperty(key)) {
+		this.size++;
+		this.pops.push(this.popLookup[key] = new Population());
+		this.keys.push(key);
+	}
+	return this.popLookup[key];
+}
+BreakdownBy.prototype.getKeys = function() {
+	return this.keys;
+}
+BreakdownBy.prototype.getPops = function() {
+	return this.pops;
+}
+BreakdownBy.prototype.getOrderedKeys = function(fixedOrder) {
+	if (fixedOrder !== undefined) {
+		var i, forcedSort = [], regularSort = [];
+		for (i = 0; i < fixedOrder.length; i++) {
+			if (this.popLookup[fixedOrder[i]] !== undefined) {
+				forcedSort.push(fixedOrder[i]);
+			}
+		}
+		for (i = 0; i < this.keys.length; i++) {
+			if (fixedOrder !== undefined) {
+				if (jQuery.inArray(this.keys[i], forcedSort) < 0) {
+					regularSort.push(this.keys[i]);
+				}
+			} else {
+				regularSort.push(this.keys[i]);
+			}
+		}
+		return forcedSort.concat(regularSort.sort());
+	} else {
+		return this.keys.slice(0).sort();
+	}
+}
+BreakdownBy.prototype.getPopSizes = function() {
+	var rv = {};
+	for (var i = 0; i < this.pops.length; i++) {
+		rv[this.keys[i]] = this.pops[i].getSize();
+	}
+	return rv;
+}
+;
 
-#var $ = require("jquery");
 var BreakdownBy = require("BreakdownBy.js");
-
-/**
- * - BASIC DEFINITIONS ------------------------------------------------------------------------------------------
- */
 if (typeof String.prototype.startsWith === "undefined") {
 	String.prototype.startsWith = function(prefix) { return (this.length > 0 && this.charAt(0) === prefix); };
 }
 if (typeof String.prototype.endsWith === "undefined") {
 	String.prototype.endsWith = function(suffix) { return this.indexOf(suffix, this.length - suffix.length) !== -1; };
 }
-
-/**
- * --------------------------------------------------------------------------------------------------------------
- */
 function Individual(uri, obj) {
 	this.uri = uri;
 	this.attributes = {};
 	if (typeof obj === "undefined")  {
-		// assume uri is also original object
 		obj = uri;
 	}
 	if (obj) {
@@ -47,32 +84,21 @@ function Individual(uri, obj) {
 Individual.prototype.getAttributes = function() {
 	return this.attributes;
 }
-/**
- * @description Provides a way to lookup an attribute by only passing a partial string (not the full URI).
- * For example, allows us to query for ":hasStatus" instead of "YOUR_SOURCE_NAMESPACE:hasStatus"
- */
 Individual.prototype.attribute = function(attributeID, newAttributeValue) {
 	if (typeof newAttributeValue !== "undefined") {
-		// we are setting the attribute to a NEW value - be careful!!!
 		this.attributes[attributeID] = newAttributeValue;
 	} else if (attributeID && !this.attributes[attributeID] && attributeID.startsWith(":")) {
-		// if there is not an exact match then search for an attribute that ends with the passed ID
 		for (var a in this.attributes) {
 			if (a.endsWith(attributeID)) {
 				return this.attributes[a];
 			}
 		}
 	}
-	// return an exact match (if one exists)
 	return this.attributes[attributeID];
 }
 Individual.prototype.getURI = function() {
 	return this.uri;
 }
-
-/**
- * --------------------------------------------------------------------------------------------------------------
- */
 function Population(existing) {
 	this.individuals = {};
 	this.attributes = {};
@@ -81,7 +107,6 @@ function Population(existing) {
 	this.last = undefined;
 	if (typeof existing === "object") {
 		if (typeof existing.getIndividuals === "function") {
-			// This is an existing Population - add each individual to our collective
 			for (var uri in existing.individuals) {
 				this.addIndividual(existing.individuals[uri]);
 			}
@@ -90,22 +115,15 @@ function Population(existing) {
 		}
 	}
 }
-/**
- * @description Adds an individual to this population
- * You can either pass a single argument of type "Individual" or a raw object itself.
- * Raw objects are added as if they are "new" (so duplicates may be created if you are not careful)
- */
 Population.prototype.addIndividual = function(ind) {
 	var uri, attributeID, aValue;
 	if (ind instanceof Individual) {
 		uri = ind.getURI();
 	} else {
-		// Add as a new entry
 		uri = "_id_"+this.size;
 		ind = new Individual(uri, ind);
 	}
 	if (!this.individuals[uri]) {
-		// This is a new individual for this population
 		this.size++;
 		this.last = uri;
 		if (!this.first) {
@@ -113,7 +131,6 @@ Population.prototype.addIndividual = function(ind) {
 		}
 	}
 	this.individuals[uri] = ind;
-	// Keep track of all the attributes and values that are actually present in the individual population
 	for (attributeID in ind.getAttributes()) {
 		aValue = ind.attribute(attributeID);
 		if (typeof aValue === "string") {
@@ -127,7 +144,6 @@ Population.prototype.addIndividual = function(ind) {
 			}
 		}
 	}
-	// Now record the missing attributes of this individual
 	for (attributeID in this.attributes) {
 		if (ind.attribute(attributeID) === undefined) {
 			this.attributes[attributeID][""] = 0;
@@ -135,9 +151,6 @@ Population.prototype.addIndividual = function(ind) {
 	}
 	return ind;
 };
-/**
- * Merges the population in (we can simply extend since it's an existing population)
- */
 Population.prototype.mergeIn = function(pop) {
 	if (pop.individuals) {
 		for (var uri in pop.individuals) {
@@ -146,7 +159,6 @@ Population.prototype.mergeIn = function(pop) {
 			}
 		}
 	} else {
-		// Unknown population structure, assume regular objects and seek out attributes.
 		if (Array.isArray(pop)) {
 			for (var i in pop) {
 				this.addIndividual(pop[i]);
@@ -154,16 +166,12 @@ Population.prototype.mergeIn = function(pop) {
 		}
 	}
 }
-/**
- * @return Returns the individual identified by the URI
- */
 Population.prototype.get = function(uri) {
 	var ind = this.individuals[uri];
 	if (ind) {
 		return ind;
 	}
 	if (uri.startsWith("#") || uri.startsWith(":")) {
-		// Try looking up the individual by it's pound-hashed URI
 		for (var i in this.individuals) {
 			if (typeof i === "string" && i.endsWith(uri)) {
 				return this.individuals[i];
@@ -172,36 +180,21 @@ Population.prototype.get = function(uri) {
 	}
 	return null;
 };
-/**
- * @return Returns the total number of UNIQUE individuals in this population
- */
 Population.prototype.getSize = function() {
 	return this.size;
 };
-/**
- * @return Simple check to see if there are any individuals
- */
 Population.prototype.hasIndividuals = function() {
 	return this.size > 0;
 };
-/**
- * @return Returns an object that can be interated using the "for (var ind in population.getIndividuals())" where "ind" will be the URI of the individual.  See "get()" to retrieve the individual itself.
- */
 Population.prototype.getIndividuals = function() {
 	return this.individuals;
 };
-/**
- * @return Returns the FIRST individual added to the population (if any)
- */
 Population.prototype.getFirst = function() {
 	if (this.hasIndividuals()) {
 		return this.get(this.first);
 	}
 	return undefined;
 };
-/**
- * @return Returns the LAST individual added to the population (if any)
- */
 Population.prototype.getLast = function() {
 	if (this.hasIndividuals()) {
 		return this.get(this.last);
@@ -214,7 +207,6 @@ Population.prototype.getAttributes = function(attributeID) {
 			return this.attributes[attributeID];
 		}
 		if (attributeID.startsWith("#") || attributeID.startsWith(":")) {
-			// Try looking up the individual by it's pound-hashed URI
 			for (var a in this.attributes) {
 				if (typeof a === "string" && a.endsWith(attributeID)) {
 					return this.attributes[a];
@@ -236,9 +228,6 @@ Population.prototype.getAttributeValues = function(attributeID) {
 	}
 	return rv;
 };
-/**
- * @description Returns a new population composed of the members that match the passed filter
- */
 Population.prototype.filter = function(filtersOrFilterProp, optionalFilterValue) {
 	var rv = new Population();
 	var filters;
@@ -260,10 +249,6 @@ Population.prototype.filter = function(filtersOrFilterProp, optionalFilterValue)
 	}
 	return rv;
 };
-/**
- * @description 
- * @return a BreakdownBy object containing the individuals, broken down by the requested attribute.  Note that the jQuery object is NOT returned!!!
- */
 Population.prototype.breakdownBy = function(attributeID) {
 	var rv = new BreakdownBy(attributeID);
 	var aValue,ind;
@@ -278,10 +263,6 @@ Population.prototype.breakdownBy = function(attributeID) {
 	}
 	return rv;
 };
-/**
- * @description Averages the values of an attribute across all individuals in a given population
- * @return a number (or undefined if no individuals are in the population)
- */
 Population.prototype.getAverage = function(attributeId, includeUndefines) {
 	var aValue, rv = [];
 	for (var ind in this.getIndividuals()) {
@@ -310,10 +291,6 @@ Population.prototype.getAverage = function(attributeId, includeUndefines) {
 	}
 	return total / rv.length;
 };
-/**
- * @description Returns the median value of an attribute across all individuals in a given population
- * @return a number (or undefined if no individuals are in the population with the attribute as passed)
- */
 Population.prototype.getMedian = function(attributeId) {
 	var aValue, rv = [];
 	for (var ind in this.getIndividuals()) {
@@ -335,17 +312,12 @@ Population.prototype.getMedian = function(attributeId) {
 	}
 	rv.sort(function(a,b){return a - b;});
 	if (rv.length % 2 === 0) {
-		// Even number of elements; average two near midpoint
 		var midpoint = (rv.length/2);
 		return (rv[midpoint] + rv[midpoint-1])/2;
 	} else {
 		return parseFloat(rv[Math.floor(rv.length/2)]);
 	}
 };
-/**
- * @description Sums the values of an attribute across all individuals in a given population
- * @return a number (the number zero will be returned if no individuals exist in the population)
- */
 Population.prototype.getSum = function(attributeId) {
 	var aValue, rv = 0;
 	for (var ind in this.getIndividuals()) {
@@ -360,10 +332,6 @@ Population.prototype.getSum = function(attributeId) {
 	}
 	return rv;
 };
-/**
- * @description Find the largest number for the given attribute
- * @return a number (or undefined will be returned if no individuals exist in the population)
- */
 Population.prototype.getMax = function(attributeId) {
 	var aValue, rv = undefined;
 	for (var ind in this.getIndividuals()) {
@@ -381,10 +349,6 @@ Population.prototype.getMax = function(attributeId) {
 	}
 	return rv;
 };
-/**
- * @description Find the smallest number for the given attribute
- * @return a number (or undefined will be returned if no individuals exist in the population)
- */
 Population.prototype.getMin = function(attributeId) {
 	var aValue, rv = undefined;
 	for (var ind in this.getIndividuals()) {
@@ -402,10 +366,6 @@ Population.prototype.getMin = function(attributeId) {
 	}
 	return rv;
 };
-
-/**
- * --------------------------------------------------------------------------------------------------------------
- */
 function Filters(existing) {
 	this.filters = {};
 	this.filterCounts = {};
@@ -438,17 +398,12 @@ Filters.prototype.hasFilters = function() {
 }
 Filters.prototype.hasFilter = function(filterID, filterValue) {
 	if (filterValue === undefined) {
-		// If no value is passed then just check to see if ANY filter exists
 		return (this.filters[filterID] !== undefined && this.filterCounts[filterID] > 0);
 	} else {
 		return (this.filters[filterID] !== undefined && this.filters[filterID][filterValue] === true);
 	}
 }
-/**
- * @return 
- */
 Filters.prototype.addFilter = function(filterID, filterValue) {
-	// If the filter ID isn't present then ignore - it's impossible to filter on an undefined attribute.
 	if (typeof filterID === "undefined") {
 		return false;
 	}
@@ -476,7 +431,6 @@ Filters.prototype.addFilter = function(filterID, filterValue) {
 Filters.prototype.removeFilter = function(filterID, filterValue) {
 	if (filterID && this.filters[filterID] !== undefined) {
 		if (typeof filterValue === "undefined") {
-			// remove ALL keys
 			for (var k in this.filters[filterID]) {
 				this.removeFilter(filterID, k);
 			}
@@ -495,32 +449,23 @@ Filters.prototype.removeFilter = function(filterID, filterValue) {
 Filters.prototype.isIndividualVisible = function(individual) {
 	for (var filterID in this.filters) {
 		var iValue = individual.attribute(filterID);
-		// Undefined values should be treated as empty strings
 		if (iValue === undefined) {
 			iValue = "";
 		}
 		var filterMatch = this.filters[filterID][iValue];
 		if (filterMatch === true) { // || (filterMatch === 'fuzzy')) { // TODO - for now we just continue... must do work to make fuzzy functional
-		// continue checking other filters
 		} else {
-			// This individual does not match the filter - stop now and return false
 			return false;
 		}
 	}
 	return true;
 };
-
-/**
- * --------------------------------------------------------------------------------------------------------------
- */
 (function($) {
 	if (typeof $.fn.ontology !== "undefined") {
-		// do not re-declare on multiple includes
 		return;
 	}
 
 	$.fn.ontology = function(method) {
-		// Method calling logic
 		try {
 			if (methods[method]) {
 				methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
@@ -541,7 +486,6 @@ Filters.prototype.isIndividualVisible = function(individual) {
 			return this.each(function(){
 				var jThis = $(this);
 				var options = jThis.data('options');
-				// If the plugin hasn't been initialized yet, initialize
 				if (!options) {
 					jThis.data('options', $.extend(true, {
 						'filters':new Filters(),
@@ -594,7 +538,6 @@ Filters.prototype.isIndividualVisible = function(individual) {
 					options.status = {};
 				}
 				if (updateFilteredPopulation) {
-					// Update the filtered population
 					jThis.ontology('updateFilteredIndividuals');
 				}
 			});
@@ -625,18 +568,12 @@ Filters.prototype.isIndividualVisible = function(individual) {
 				for (var i in incomingOnt.individuals) {
 					population.addIndividual(incomingOnt.individuals[i]);
 				}
-
-				// RETURN immediately if we have any pending ontologies that havne't loaded yet.
 				for (var s in options.status) {
 					if (options.status[s] === "pending") {
 						return;
 					}
 				}
-
-				// Update the filtered population
 				jThis.ontology('updateFilteredIndividuals');
-
-				// Perform any defined callbacks
 				if (typeof options.onloadCallback === 'function') {
 					options.onloadCallback.call(jThis, population, options);
 				}
@@ -664,18 +601,12 @@ Filters.prototype.isIndividualVisible = function(individual) {
 					jThis.data('population', population);
 				}
 				population.mergeIn(pop);
-
-				// RETURN immediately if we have any pending ontologies that havne't loaded yet.
 				for (var s in options.status) {
 					if (options.status[s] === "pending") {
 						return;
 					}
 				}
-
-				// Update the filtered population
 				jThis.ontology('updateFilteredIndividuals');
-
-				// Perform any defined callbacks
 				if (typeof options.onloadCallback === 'function') {
 					options.onloadCallback.call(jThis, population, options);
 				}
@@ -699,7 +630,6 @@ Filters.prototype.isIndividualVisible = function(individual) {
 		},
 
 		addFilter: function(attributeID, attributeValue, updateFilteredPopulation) {
-			// If the attribute ID isn't present then ignore - it's nonesense
 			if (!attributeID) {
 				return this;
 			}
@@ -714,7 +644,6 @@ Filters.prototype.isIndividualVisible = function(individual) {
 		},
 		
 		setFilters: function(newFilters, updateFilteredPopulation) {
-			// If the attribute ID isn't present then ignore - it's nonesense
 			if (typeof newFilters !== "object" && newFilters.constructor !== "Filter") {
 				return this;
 			}
@@ -820,13 +749,6 @@ Filters.prototype.isIndividualVisible = function(individual) {
 	};
 
 })(jQuery);
-
-/**
- * --- GENERAL FUNCTIONS ----------------------------------------------------------------------------------------
- */
-/**
- * @return Array of the keys.  Specifying a "fixedOrder" will override the natural order of matched keys.
- */
 function getOrderedKeys(obj, fixedOrder) {
 	var i, forcedSort = [], regularSort = [];
 	if (fixedOrder !== undefined) {
@@ -842,20 +764,14 @@ function getOrderedKeys(obj, fixedOrder) {
 		}
 		if (fixedOrder !== undefined) {
 			if (jQuery.inArray(i, forcedSort) < 0) {
-				// only insert to return array if it doesn't already exist
 				regularSort.push(i);
 			}
 		} else {
-			// always push
 			regularSort.push(i);
 		}
 	}
 	return forcedSort.concat(regularSort.sort());
 }
-
-/**
- * @return Array with any elements matching the fixed order passed first (and in order).  The remaining elements will also be sorted.
- */
 function getOrderedArray(arr, fixedOrder, sortFunction) {
 	var i, forcedSort = [], regularSort = [];
 	if (typeof sortFunction === "function") {
@@ -871,11 +787,9 @@ function getOrderedArray(arr, fixedOrder, sortFunction) {
 	for (i = 0; i < arr.length; i++) {
 		if (fixedOrder !== undefined) {
 			if (jQuery.inArray(arr[i], forcedSort) < 0) {
-				// only insert to return array if it doesn't already exist
 				regularSort.push(arr[i]);
 			}
 		} else {
-			// always push
 			regularSort.push(i);
 		}
 	}
@@ -937,7 +851,6 @@ function addCommas(num) {
 		if (num.indexOf('.') < 0) {
 			num = num.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
 		} else {
-			// split the number to make sure we don't add commas to the right of the decimal place
 			var numSplit = num.split('.');
 			num = numSplit[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,") + '.' + numSplit[1];
 		}
